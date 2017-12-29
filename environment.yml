@@ -1,0 +1,6 @@
+name : tourneyman-serverless
+dependencies :
+  - python=3.6
+
+  - pip :
+    - boto3==1.5.6
