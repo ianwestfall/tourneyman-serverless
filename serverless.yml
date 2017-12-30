@@ -4,7 +4,9 @@ provider:
   name: aws
   runtime: python3.6
   environment:
-    DYNAMODB_TABLE_EVENTS: ${env:DYNAMODB_TABLE_EVENTS}
+    DYNAMODB_TABLE_EVENTS: ${self:provider.stage}-events
+    DYNAMODB_TABLE_TOURNAMENTS: ${self:provider.stage}-tournaments
+    DYNAMODB_TABLE_MATCHES: ${self:provider.stage}-matches
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -12,31 +14,12 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
+        - dynamodb:Query
       Resource: "arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.DYNAMODB_TABLE_EVENTS}"
 
 # you can overwrite defaults here
 #  stage: dev
 #  region: us-east-1
-
-# you can add statements to the Lambda function's IAM Role here
-#  iamRoleStatements:
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:ListBucket"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
 
 package:
   include:
@@ -49,42 +32,13 @@ functions:
       - http:
           path: events
           method: get
+          authorizer:
+            arn: ${env:USER_POOL_ARN}
       - http:
           path: events
           method: post
-
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill
-#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
-
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
+          authorizer:
+            arn: ${env:USER_POOL_ARN}
 
 resources:
   Resources:
@@ -94,15 +48,39 @@ resources:
         TableName: ${self:provider.environment.DYNAMODB_TABLE_EVENTS}
         AttributeDefinitions:
           -
+            AttributeName: createdBy
+            AttributeType: S
+          -
             AttributeName: eventId
             AttributeType: S
         KeySchema:
           -
+            AttributeName: createdBy
+            KeyType: HASH
+          -
             AttributeName: eventId
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    tournamentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_TOURNAMENTS}
+        AttributeDefinitions:
+          -
+            AttributeName: tournamentId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: tournamentId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+
+    # CloudFormation doesn't support some of the stuff we want yet, so manage the UserPool externally.
+    # TODO: When support is added for link based email verification, add in a UserPool and UserPoolClient definition.
 
 #  Outputs:
 #     NewOutput:

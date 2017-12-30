@@ -1,0 +1,89 @@
+event
+	created by
+	created date
+	start date
+	end date
+	name
+	description
+	status (pending, in progress, finished, cancelled, etc.? Is this column necessary?)
+
+	tournaments: [
+		{
+			created by
+			created date
+			name
+			description
+			sport
+			status (pending, in progress, finished, cancelled, etc.? This column will be used to lock tournaments from editing after they've began)
+			stages: [ // ORDER MATTERS, THESE ARE SEQUENTIAL
+				{
+					type
+					status
+					start datetime
+					end datetime
+					number of rings
+					matches: [ // ORDER MATTERS, THESE ARE SEQUENTIAL BY LOCATION
+						{
+							ring/location
+							competitor a
+							competitor b
+							final score a
+							final score b
+							end time
+						}
+					]
+				},
+				...
+			]
+		},
+		...
+	]
+
+Access Patterns
+    One admin user will create the event and tournaments
+    This user will upload the competitors and generate the brackets. This can be done over and over again,
+        overwriting the old brackets each time, until the tournament is marked as 'in progress'
+    Admin marks tournament as 'started', first stage is automatically started.
+    When all matches in a tournament stage are complete, the stage is automatically marked as ended.
+        Should this be done manually?
+    Each ring will have an account, and that account will run matches for that ring until there aren't any more
+        After each match is completed, a check will be run to see if there is another match for that ring.
+        If there is not, a check will be run to see if there are any pending matches at all for the stage, and if there are not, the stage will be marked as complete.
+    Each time a stage is completed, a check will run to see if it is the final stage for its tournament, and if it is, the tournament will be marked as complete.
+        If it is not the last stage in the tournament, the stage will be marked as complete and the matches for the next stage will be generated.
+
+
+    Questions:
+
+
+Proposed Table Structure
+    event
+        A given item would only be accessed by the creator, or an account
+        primary key: created_by (hash?)
+        example element:
+
+        {
+            created_by: 'ian',
+            events: [
+                {
+                    name: '', description: '', ... // Accessed by created_by username and index? Should these have a UUID as well?
+                    tournaments: [uuid1, uuid2, uuid3] // This can be unordered and sorted on the front end by name?
+                }
+            ],
+        }
+
+    tournament
+        A given item would only be accessed by UUID, retrieved from the event table
+        primary key: uuid pointed to by event
+        example element:
+
+        {
+            tournamentId: ...,
+            data
+            ...
+            matches: [uuid1, uuid2, uuid3, ...]
+        }
+
+    match
+        A given item would only be accessed by UUID, OR by a general query looking for unfinished matches for a given ring, and unfinished matches for a given tournament stage
+        Could set up an index to allow searching by tournament stage UUID and ring id + status?

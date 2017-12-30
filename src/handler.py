@@ -1,12 +1,17 @@
-from src.crud.events import get_events, create_event
+from src.crud.events import GetEventsHandler, CreateEventHandler
 
 
 def events(event, context):
     if 'httpMethod' in event:
+        handler = None
+
         if event['httpMethod'] == 'GET':
-            return get_events(event, context)
+            handler = GetEventsHandler()
         elif event['httpMethod'] == 'POST':
-            return create_event(event, context)
+            handler = CreateEventHandler()
+
+        if handler:
+            return handler.handle_request(event, context)
 
     return {
         'statusCode': 405,
