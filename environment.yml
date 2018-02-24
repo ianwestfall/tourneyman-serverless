@@ -1,6 +1,8 @@
 name : tourneyman-serverless
 dependencies :
   - python=3.6
+  - psycopg2=2.7.1
 
   - pip :
     - boto3==1.5.6
+    - SQLAlchemy==1.2.4
