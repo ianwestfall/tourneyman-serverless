@@ -1,5 +1,6 @@
 # Distribution / packaging
 .Python
+__pycache__/
 env/
 build/
 develop-eggs/
@@ -20,3 +21,9 @@ var/
 .serverless
 
 .idea/
+
+# Notes
+/docs/*.txt
+
+# Configuration files that we don't want leaked
+alembic.ini

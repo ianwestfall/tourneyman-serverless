@@ -3,19 +3,6 @@ service: tourneyman
 provider:
   name: aws
   runtime: python3.6
-  environment:
-    DYNAMODB_TABLE_EVENTS: ${self:provider.stage}-events
-    DYNAMODB_TABLE_TOURNAMENTS: ${self:provider.stage}-tournaments
-    DYNAMODB_TABLE_MATCHES: ${self:provider.stage}-matches
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-        - dynamodb:Query
-      Resource: "arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.DYNAMODB_TABLE_EVENTS}"
 
 # you can overwrite defaults here
 #  stage: dev
@@ -39,50 +26,3 @@ functions:
           method: post
           authorizer:
             arn: ${env:USER_POOL_ARN}
-
-resources:
-  Resources:
-    eventsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_TABLE_EVENTS}
-        AttributeDefinitions:
-          -
-            AttributeName: createdBy
-            AttributeType: S
-          -
-            AttributeName: eventId
-            AttributeType: S
-        KeySchema:
-          -
-            AttributeName: createdBy
-            KeyType: HASH
-          -
-            AttributeName: eventId
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-    tournamentsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_TABLE_TOURNAMENTS}
-        AttributeDefinitions:
-          -
-            AttributeName: tournamentId
-            AttributeType: S
-        KeySchema:
-          -
-            AttributeName: tournamentId
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-
-    # CloudFormation doesn't support some of the stuff we want yet, so manage the UserPool externally.
-    # TODO: When support is added for link based email verification, add in a UserPool and UserPoolClient definition.
-
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"

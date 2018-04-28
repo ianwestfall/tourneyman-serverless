@@ -6,3 +6,4 @@ dependencies :
   - pip :
     - boto3==1.5.6
     - SQLAlchemy==1.2.4
+    - alembic==0.9.9
